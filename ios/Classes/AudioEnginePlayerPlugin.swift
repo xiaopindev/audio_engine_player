@@ -17,6 +17,12 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
     switch call.method {
     case "getPlatformVersion":
       result("iOS " + UIDevice.current.systemVersion)
+    case "getTotalDuration":
+      let duration = audioEnginePlayer.totalDuration
+      result(duration)
+    case "getVolume":
+      let volume = audioEnginePlayer.volume
+      result(volume)
     case "play":
       if let args = call.arguments as? [String: Any], let filePath = args["filePath"] as? String {
         audioEnginePlayer.play(with: filePath)
@@ -58,7 +64,19 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
         result(FlutterError(code: "INVALID_ARGUMENT", message: "volume is required", details: nil))
       }
     case "setLoopMode":
-      if let args = call.arguments as? [String: Any], let mode = args["mode"] as? String, let loopMode = LoopMode(rawValue: mode) {
+      if let args = call.arguments as? [String: Any], let mode = args["mode"] as? Int {
+        let loopMode: LoopMode
+        switch mode {
+        case 0:
+          loopMode = .all
+        case 1:
+          loopMode = .single
+        case 2:
+          loopMode = .shuffle
+        default:
+          result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid loop mode", details: nil))
+          return
+        }
         audioEnginePlayer.setLoopMode(loopMode)
         result(nil)
       } else {
@@ -92,7 +110,7 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
   private func setupPlaybackProgressCallback() {
     audioEnginePlayer.onPlaybackProgressUpdate = { [weak self] progress in
       guard let self = self else { return }
-      self.eventSink?(["event": "playbackProgress", "progress": progress])
+      self.eventSink?(["event": "playbackProgress", "progress": progress, "duration": audioEnginePlayer.totalDuration])
     }
   }
 }

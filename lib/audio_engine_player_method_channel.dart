@@ -15,6 +15,18 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   }
 
   @override
+  Future<int> getTotalDuration() async {
+    final int duration = await _channel.invokeMethod('getTotalDuration') ?? 0;
+    return duration;
+  }
+
+  @override
+  Future<double> getVolume() async {
+    final double volume = await _channel.invokeMethod('getVolume') ?? 1;
+    return volume;
+  }
+
+  @override
   Future<void> play(String filePath) async {
     await _channel.invokeMethod('play', {'filePath': filePath});
   }
@@ -56,7 +68,7 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   }
 
   @override
-  Future<void> setLoopMode(String mode) async {
+  Future<void> setLoopMode(int mode) async {
     await _channel.invokeMethod('setLoopMode', {'mode': mode});
   }
 

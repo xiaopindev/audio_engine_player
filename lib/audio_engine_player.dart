@@ -6,6 +6,14 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.getPlatformVersion();
   }
 
+  Future<int> get duration async {
+    return AudioEnginePlayerPlatform.instance.getTotalDuration();
+  }
+
+  Future<double> get volume async {
+    return AudioEnginePlayerPlatform.instance.getVolume();
+  }
+
   Future<void> play(String filePath) async {
     return AudioEnginePlayerPlatform.instance.play(filePath);
   }
@@ -38,7 +46,7 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.setVolume(volume);
   }
 
-  Future<void> setLoopMode(String mode) async {
+  Future<void> setLoopMode(int mode) async {
     return AudioEnginePlayerPlatform.instance.setLoopMode(mode);
   }
 
@@ -58,9 +66,14 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.clearCaches();
   }
 
-  Stream<int> get onPlaybackProgress {
+  Stream<Map<String, dynamic>> get onPlaybackProgress {
     return AudioEnginePlayerPlatform.instance.onEventStream
         .where((event) => event['event'] == 'playbackProgress')
-        .map((event) => event['progress'] as int);
+        .map(
+          (event) => {
+            'progress': event['progress'] as int? ?? 0,
+            'duration': event['duration'] as int? ?? 0,
+          },
+        );
   }
 }
