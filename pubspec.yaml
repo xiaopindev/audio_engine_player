@@ -1,7 +1,8 @@
 name: audio_engine_player
 description: "A new Flutter plugin project."
 version: 1.0.0
-#homepage:
+homepage: https://github.com/xiaopindev/audio_engine_player
+repository: https://github.com/xiaopindev/audio_engine_player
 
 environment:
   sdk: '>=3.4.3 <4.0.0'
