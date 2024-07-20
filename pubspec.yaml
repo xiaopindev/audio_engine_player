@@ -37,6 +37,9 @@ flutter:
     platforms:
       ios:
         pluginClass: AudioEnginePlayerPlugin
+      android:
+        package: com.ppsw.tech.audio_engine_player
+        pluginClass: AudioEnginePlayerPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

@@ -50,6 +50,13 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
       } else {
         result(FlutterError(code: "INVALID_ARGUMENT", message: "urls and autoPlay are required", details: nil))
       }
+    case "appendToPlaylist":
+      if let args = call.arguments as? [String: Any], let url = args["url"] as? String, let autoPlay = args["autoPlay"] as? Bool {
+        audioEnginePlayer.appendToPlaylist(url, autoPlay: autoPlay)
+        result(nil)
+      } else {
+        result(FlutterError(code: "INVALID_ARGUMENT", message: "url and autoPlay are required", details: nil))
+      }
     case "playNext":
       audioEnginePlayer.playNext()
       result(nil)

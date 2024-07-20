@@ -31,6 +31,8 @@ abstract class AudioEnginePlayerPlatform extends PlatformInterface {
 
   Future<void> setPlaylist(List<String> urls, bool autoPlay);
 
+  Future<void> appendToPlaylist(String url, bool autoPlay);
+
   Future<void> playNext();
 
   Future<void> playPrevious();

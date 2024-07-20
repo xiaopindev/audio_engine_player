@@ -53,6 +53,12 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   }
 
   @override
+  Future<void> appendToPlaylist(String url, bool autoPlay) async {
+    await _channel
+        .invokeMethod('appendToPlaylist', {'url': url, 'autoPlay': autoPlay});
+  }
+
+  @override
   Future<void> playNext() async {
     await _channel.invokeMethod('playNext');
   }

@@ -34,6 +34,10 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.setPlaylist(urls, autoPlay);
   }
 
+  Future<void> appendToPlaylist(String url, bool autoPlay) async {
+    return AudioEnginePlayerPlatform.instance.appendToPlaylist(url, autoPlay);
+  }
+
   Future<void> playNext() async {
     return AudioEnginePlayerPlatform.instance.playNext();
   }
