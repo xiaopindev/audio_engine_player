@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('音频控制面板'),
+          title: const Text('Audio Engine Player'),
         ),
         body: const AudioControlPanel(),
       ),
@@ -60,7 +60,7 @@ class _AudioControlPanelState extends State<AudioControlPanel> {
   };
 
   int _reverbPreset = 0;
-  double _volume = 0.0;
+  double _volume = 1.0;
   int _currentPosition = 0;
   int _duration = 0;
 
@@ -204,6 +204,8 @@ class _AudioControlPanelState extends State<AudioControlPanel> {
               setState(() {
                 _volume = value;
               });
+              print('volume: $value');
+              _audioEnginePlayer.setVolume(value);
             },
           ),
         ),
@@ -223,6 +225,7 @@ class _AudioControlPanelState extends State<AudioControlPanel> {
               setState(() {
                 _currentPosition = value.toInt();
               });
+              _audioEnginePlayer.seekTo(value.toInt());
             },
           ),
         ),
@@ -243,6 +246,7 @@ class _AudioControlPanelState extends State<AudioControlPanel> {
 
   void _onNextReverb() {
     _reverbPreset = (_reverbPreset + 1) % 14;
+    print('ReverbPreset : $_reverbPreset');
     _audioEnginePlayer.setReverb(_reverbPreset, 50.0);
   }
 
