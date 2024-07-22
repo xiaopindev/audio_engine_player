@@ -27,6 +27,8 @@ class AudioEnginePlayer {
     var speed : Float = 1.0
     /// 当前播放索引
     var currentPlayIndex: Int = 0
+    /// 播放状态
+    var isPlaying: Bool = false
     
     //MARK: Private Property
     private var audioEngine: AVAudioEngine
@@ -35,8 +37,7 @@ class AudioEnginePlayer {
     
     private var playerNode: AVAudioPlayerNode
     private var audioFile: AVAudioFile?
-    
-    private var isPlaying: Bool = false
+
     private var isPaused: Bool = false
     private var isSeeking: Bool = false
     /// 单位：毫秒
@@ -112,6 +113,7 @@ class AudioEnginePlayer {
             //self.playerNode.prepare(withFrameCount: <#T##AVAudioFrameCount#>)
             self.playerNode.play()
             self.isPlaying = true
+            
             startProgressUpdateTimer()
         } catch {
             print("Error loading audio file: \(error)")
@@ -250,6 +252,12 @@ class AudioEnginePlayer {
     public func play(with filePath: String) {
         print("Play filePath \(filePath)")
         stop()
+        if !playlist.contains(filePath) {
+            playlist.append(filePath)
+            currentPlayIndex = playlist.count - 1
+        } else {
+            currentPlayIndex = playlist.firstIndex(of: filePath) ?? 0
+        }
         if let url = URL(string: filePath), url.scheme == "http" || url.scheme == "https" {
             downloadFile(from: url) { localURL in
                 guard let localURL = localURL else {
@@ -316,6 +324,15 @@ class AudioEnginePlayer {
         }
     }
     
+    public func seekToIndex(_ index: Int) {
+        guard index >= 0 && index < playlist.count else {
+            print("无效的索引：\(index)")
+            return
+        }
+        currentPlayIndex = index
+        playCurrentTrack()
+    }
+    
     public func playOrPause() {
         if isPlaying {
             playerNode.pause()
@@ -374,6 +391,54 @@ class AudioEnginePlayer {
         if (autoPlay){
             currentPlayIndex = playlist.count - 1
             play(with: playlist[currentPlayIndex])
+        }
+    }
+    
+    public func removeFromPlaylist(_ index: Int) {
+        guard index >= 0 && index < playlist.count else {
+            print("无效的索引：\(index)")
+            return
+        }
+        
+        // 如果移除的是当前正在播放的歌曲，停止播放
+        if index == currentPlayIndex && isPlaying {
+            stop()
+        }
+        
+        // 移除播放列表中的指定项
+        playlist.remove(at: index)
+        
+        // 调整当前播放索引
+        if index < currentPlayIndex {
+            currentPlayIndex -= 1
+        } else if index == currentPlayIndex && !playlist.isEmpty {
+            currentPlayIndex = 0
+        }
+        
+        // 如果播放列表还有数据，播放第一首
+        if !playlist.isEmpty {
+            playCurrentTrack()
+        } else {
+            // 如果播放列表为空，停止播放
+            stop()
+        }
+    }
+    
+    public func swapOnPlaylist(_ oldIndex: Int, _ newIndex: Int) {
+        guard oldIndex >= 0 && oldIndex < playlist.count,
+              newIndex >= 0 && newIndex < playlist.count else {
+            print("无效的索引：oldIndex: \(oldIndex), newIndex: \(newIndex)")
+            return
+        }
+        
+        // 交换播放列表中的两个索引值
+        playlist.swapAt(oldIndex, newIndex)
+        
+        // 如果当前播放索引是其中一个索引，更新当前播放索引
+        if currentPlayIndex == oldIndex {
+            currentPlayIndex = newIndex
+        } else if currentPlayIndex == newIndex {
+            currentPlayIndex = oldIndex
         }
     }
     

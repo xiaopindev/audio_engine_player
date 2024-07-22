@@ -32,6 +32,9 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
     case "currentPlayIndex":
       let currentPlayIndex = audioEnginePlayer.currentPlayIndex
       result(currentPlayIndex)
+    case "isPlaying":
+      let isPlaying = audioEnginePlayer.isPlaying
+      result(isPlaying)
     case "play":
       if let args = call.arguments as? [String: Any], let filePath = args["filePath"] as? String {
         audioEnginePlayer.play(with: filePath)
@@ -42,6 +45,13 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
     case "seekTo":
       if let args = call.arguments as? [String: Any], let milliseconds = args["milliseconds"] as? Int {
         audioEnginePlayer.seekTo(milliseconds: milliseconds)
+        result(nil)
+      } else {
+        result(FlutterError(code: "INVALID_ARGUMENT", message: "milliseconds is required", details: nil))
+      }
+    case "seekToIndex":
+      if let args = call.arguments as? [String: Any], let index = args["index"] as? Int {
+        audioEnginePlayer.seekToIndex(index);
         result(nil)
       } else {
         result(FlutterError(code: "INVALID_ARGUMENT", message: "milliseconds is required", details: nil))
@@ -65,6 +75,20 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
     case "appendToPlaylist":
       if let args = call.arguments as? [String: Any], let url = args["url"] as? String, let autoPlay = args["autoPlay"] as? Bool {
         audioEnginePlayer.appendToPlaylist(url, autoPlay: autoPlay)
+        result(nil)
+      } else {
+        result(FlutterError(code: "INVALID_ARGUMENT", message: "url and autoPlay are required", details: nil))
+      }
+    case "removeFromPlaylist":
+      if let args = call.arguments as? [String: Any], let index = args["index"] as? Int {
+        audioEnginePlayer.removeFromPlaylist(index)
+        result(nil)
+      } else {
+        result(FlutterError(code: "INVALID_ARGUMENT", message: "url and autoPlay are required", details: nil))
+      }
+    case "swapOnPlaylist":
+      if let args = call.arguments as? [String: Any], let oldIndex = args["oldIndex"] as? Int, let newIndex = args["newIndex"] as? Int {
+        audioEnginePlayer.swapOnPlaylist(oldIndex, newIndex);
         result(nil)
       } else {
         result(FlutterError(code: "INVALID_ARGUMENT", message: "url and autoPlay are required", details: nil))

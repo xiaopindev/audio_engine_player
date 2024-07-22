@@ -25,9 +25,13 @@ abstract class AudioEnginePlayerPlatform extends PlatformInterface {
 
   Future<int> currentPlayIndex();
 
+  Future<bool> isPlaying();
+
   Future<void> play(String filePath);
 
   Future<void> seekTo(int milliseconds);
+
+  Future<void> seekToIndex(int index);
 
   Future<void> playOrPause();
 
@@ -38,6 +42,10 @@ abstract class AudioEnginePlayerPlatform extends PlatformInterface {
   Future<void> setPlaylist(List<String> urls, bool autoPlay);
 
   Future<void> appendToPlaylist(String url, bool autoPlay);
+
+  Future<void> removeFromPlaylist(int index);
+
+  Future<void> swapOnPlaylist(int oldIndex, int newIndex);
 
   Future<void> playNext();
 

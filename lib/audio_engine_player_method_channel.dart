@@ -40,6 +40,12 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   }
 
   @override
+  Future<bool> isPlaying() async {
+    final bool isPlaying = await _channel.invokeMethod('isPlaying') ?? false;
+    return isPlaying;
+  }
+
+  @override
   Future<void> play(String filePath) async {
     await _channel.invokeMethod('play', {'filePath': filePath});
   }
@@ -47,6 +53,11 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   @override
   Future<void> seekTo(int milliseconds) async {
     await _channel.invokeMethod('seekTo', {'milliseconds': milliseconds});
+  }
+
+  @override
+  Future<void> seekToIndex(int index) async {
+    await _channel.invokeMethod('seekToIndex', {'index': index});
   }
 
   @override
@@ -74,6 +85,17 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   Future<void> appendToPlaylist(String url, bool autoPlay) async {
     await _channel
         .invokeMethod('appendToPlaylist', {'url': url, 'autoPlay': autoPlay});
+  }
+
+  @override
+  Future<void> removeFromPlaylist(int index) async {
+    await _channel.invokeMethod('removeFromPlaylist', {'index': index});
+  }
+
+  @override
+  Future<void> swapOnPlaylist(int oldIndex, int newIndex) async {
+    await _channel.invokeMethod(
+        'swapOnPlaylist', {'oldIndex': oldIndex, 'newIndex': newIndex});
   }
 
   @override

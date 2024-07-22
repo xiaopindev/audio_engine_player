@@ -24,12 +24,20 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.currentPlayIndex();
   }
 
+  Future<bool> get isPlaying async {
+    return AudioEnginePlayerPlatform.instance.isPlaying();
+  }
+
   Future<void> play(String filePath) async {
     return AudioEnginePlayerPlatform.instance.play(filePath);
   }
 
   Future<void> seekTo(int milliseconds) async {
     return AudioEnginePlayerPlatform.instance.seekTo(milliseconds);
+  }
+
+  Future<void> seekToIndex(int index) async {
+    return AudioEnginePlayerPlatform.instance.seekToIndex(index);
   }
 
   Future<void> playOrPause() async {
@@ -50,6 +58,15 @@ class AudioEnginePlayer {
 
   Future<void> appendToPlaylist(String url, bool autoPlay) async {
     return AudioEnginePlayerPlatform.instance.appendToPlaylist(url, autoPlay);
+  }
+
+  Future<void> removeFromPlaylist(int index) async {
+    return AudioEnginePlayerPlatform.instance.removeFromPlaylist(index);
+  }
+
+  Future<void> swapOnPlaylist(int oldIndex, int newIndex) async {
+    return AudioEnginePlayerPlatform.instance
+        .swapOnPlaylist(oldIndex, newIndex);
   }
 
   Future<void> playNext() async {
