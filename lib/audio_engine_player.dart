@@ -1,7 +1,12 @@
 import 'dart:async';
 import 'audio_engine_player_platform_interface.dart';
 
-enum PlayerEventType { playbackProgress, playingStatus }
+enum PlayerEventType {
+  playbackProgress,
+  playingStatus,
+  playCompleted,
+  playingIndex
+}
 
 class AudioEnginePlayer {
   Future<String?> get platformVersion async {

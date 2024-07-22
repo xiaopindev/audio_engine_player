@@ -177,6 +177,20 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
       self.eventSink?(["event": "playingStatus", "isPlaying": isPlaying])
     }
   }
+
+  private func setupPlayCompletedCallback() {
+    audioEnginePlayer.onPlayCompleted = { [weak self] in
+      guard let self = self else { return }
+      self.eventSink?(["event": "playCompleted", "isCompleted": true])
+    }
+  }
+
+  private func setupPlayingIndexCallback() {
+    audioEnginePlayer.onPlayingIndexChanged = { [weak self] index in
+      guard let self = self else { return }
+      self.eventSink?(["event": "playingIndex", "currentIndex": index])
+    }
+  }
 }
 
 extension AudioEnginePlayerPlugin: FlutterStreamHandler {
@@ -184,6 +198,8 @@ extension AudioEnginePlayerPlugin: FlutterStreamHandler {
     self.eventSink = events
     setupPlaybackProgressCallback()
     setupPlayStatusCallback()
+    setupPlayCompletedCallback()
+    setupPlayingIndexCallback()
     return nil
   }
 

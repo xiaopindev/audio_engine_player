@@ -72,13 +72,22 @@ class _AudioControlPanelState extends State<AudioControlPanel> {
       final eventType = event.$1;
       final eventData = event.$2;
 
+      print('eventType $eventType');
+      //print('eventData $eventData');
+
       if (eventType == 'playbackProgress') {
         _currentPosition = eventData["progress"] as int;
         _duration = eventData["duration"] as int;
+        print('$_currentPosition/$_duration');
         setState(() {});
+      } else if (eventType == 'playingIndex') {
+        final playIndex = eventData["currentIndex"] as int;
+        print('playIndex $playIndex');
       } else if (eventType == 'playingStatus') {
         final isPlaying = eventData["isPlaying"] as bool;
         print('isPlaying $isPlaying');
+      } else if (eventType == 'playCompleted') {
+        print('playCompleted');
       } else if (eventType == 'error') {
         print('Error: ${eventData["desc"]}');
       }

@@ -16,7 +16,10 @@ enum LoopMode {
 class AudioEnginePlayer {
     //MARK: Public Property
     var onPlayingStatusChanged: ((Bool) -> ())?
+    var onPlayingIndexChanged: ((Int) -> ())?
+    var onPlayCompleted: (() -> ())?
     var onPlaybackProgressUpdate: ((Int) -> ())?
+    
     /// 播放总时长，单位毫秒
     var totalDuration: Int = 0
     /// 是否静音
@@ -192,6 +195,7 @@ class AudioEnginePlayer {
     }
     
     private func handlePlaybackCompletion() {
+        onPlayCompleted?()
         seekPosition = 0
         stopProgressUpdateTimer()
         switch loopMode {
@@ -203,6 +207,7 @@ class AudioEnginePlayer {
             playRandomTrack()
         }
     }
+    
     private func playCurrentTrack() {
         guard !playlist.isEmpty, currentPlayIndex < playlist.count else {
             print("播放列表为空或索引无效")
@@ -258,6 +263,7 @@ class AudioEnginePlayer {
         } else {
             currentPlayIndex = playlist.firstIndex(of: filePath) ?? 0
         }
+        onPlayingIndexChanged?(currentPlayIndex)
         if let url = URL(string: filePath), url.scheme == "http" || url.scheme == "https" {
             downloadFile(from: url) { localURL in
                 guard let localURL = localURL else {
