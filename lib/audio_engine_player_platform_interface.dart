@@ -17,15 +17,21 @@ abstract class AudioEnginePlayerPlatform extends PlatformInterface {
 
   Future<String?> getPlatformVersion();
 
-  Future<int> getTotalDuration();
+  Future<int> duration();
 
-  Future<double> getVolume();
+  Future<double> volume();
+
+  Future<bool> isMute();
+
+  Future<int> currentPlayIndex();
 
   Future<void> play(String filePath);
 
   Future<void> seekTo(int milliseconds);
 
   Future<void> playOrPause();
+
+  Future<void> pause();
 
   Future<void> stop();
 
@@ -37,7 +43,11 @@ abstract class AudioEnginePlayerPlatform extends PlatformInterface {
 
   Future<void> playPrevious();
 
-  Future<void> setVolume(double volume);
+  Future<void> setSpeed(double value);
+
+  Future<void> setVolume(double value);
+
+  Future<void> setMute(bool value);
 
   Future<void> setLoopMode(int mode);
 

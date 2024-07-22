@@ -17,12 +17,21 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
     switch call.method {
     case "getPlatformVersion":
       result("iOS " + UIDevice.current.systemVersion)
-    case "getTotalDuration":
+    case "duration":
       let duration = audioEnginePlayer.totalDuration
       result(duration)
-    case "getVolume":
+    case "volume":
       let volume = audioEnginePlayer.volume
       result(volume)
+    case "isMute":
+      let isMute = audioEnginePlayer.isMute
+      result(isMute)
+    case "speed":
+      let speed = audioEnginePlayer.speed
+      result(speed)
+    case "currentPlayIndex":
+      let currentPlayIndex = audioEnginePlayer.currentPlayIndex
+      result(currentPlayIndex)
     case "play":
       if let args = call.arguments as? [String: Any], let filePath = args["filePath"] as? String {
         audioEnginePlayer.play(with: filePath)
@@ -39,6 +48,9 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
       }
     case "playOrPause":
       audioEnginePlayer.playOrPause()
+      result(nil)
+    case "pause":
+      audioEnginePlayer.pause()
       result(nil)
     case "stop":
       audioEnginePlayer.stop()
@@ -63,12 +75,26 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
     case "playPrevious":
       audioEnginePlayer.playPrevious()
       result(nil)
+    case "setSpeed":
+      if let args = call.arguments as? [String: Any], let value = args["speed"] as? Float {
+        audioEnginePlayer.setSpeed(value)
+        result(nil)
+      } else {
+        result(FlutterError(code: "INVALID_ARGUMENT", message: "speed is required", details: nil))
+      }
     case "setVolume":
       if let args = call.arguments as? [String: Any], let volume = args["volume"] as? Float {
         audioEnginePlayer.setVolume(volume)
         result(nil)
       } else {
         result(FlutterError(code: "INVALID_ARGUMENT", message: "volume is required", details: nil))
+      }
+    case "setMute":
+      if let args = call.arguments as? [String: Any], let value = args["isMute"] as? Bool {
+        audioEnginePlayer.setIsMute(value)
+        result(nil)
+      } else {
+        result(FlutterError(code: "INVALID_ARGUMENT", message: "isMute is required", details: nil))
       }
     case "setLoopMode":
       if let args = call.arguments as? [String: Any], let mode = args["mode"] as? Int {
@@ -120,12 +146,20 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
       self.eventSink?(["event": "playbackProgress", "progress": progress, "duration": audioEnginePlayer.totalDuration])
     }
   }
+
+  private func setupPlayStatusCallback() {
+    audioEnginePlayer.onPlayingStatusChanged = { [weak self] isPlaying in
+      guard let self = self else { return }
+      self.eventSink?(["event": "playingStatus", "isPlaying": isPlaying])
+    }
+  }
 }
 
 extension AudioEnginePlayerPlugin: FlutterStreamHandler {
   public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
     self.eventSink = events
     setupPlaybackProgressCallback()
+    setupPlayStatusCallback()
     return nil
   }
 

@@ -15,15 +15,28 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   }
 
   @override
-  Future<int> getTotalDuration() async {
-    final int duration = await _channel.invokeMethod('getTotalDuration') ?? 0;
+  Future<int> duration() async {
+    final int duration = await _channel.invokeMethod('duration') ?? 0;
     return duration;
   }
 
   @override
-  Future<double> getVolume() async {
-    final double volume = await _channel.invokeMethod('getVolume') ?? 1;
+  Future<double> volume() async {
+    final double volume = await _channel.invokeMethod('isMute') ?? 1;
     return volume;
+  }
+
+  @override
+  Future<bool> isMute() async {
+    final bool isMute = await _channel.invokeMethod('isMute') ?? false;
+    return isMute;
+  }
+
+  @override
+  Future<int> currentPlayIndex() async {
+    final int currentPlayIndex =
+        await _channel.invokeMethod('currentPlayIndex') ?? 0;
+    return currentPlayIndex;
   }
 
   @override
@@ -39,6 +52,11 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   @override
   Future<void> playOrPause() async {
     await _channel.invokeMethod('playOrPause');
+  }
+
+  @override
+  Future<void> pause() async {
+    await _channel.invokeMethod('pause');
   }
 
   @override
@@ -69,8 +87,18 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   }
 
   @override
-  Future<void> setVolume(double volume) async {
-    await _channel.invokeMethod('setVolume', {'volume': volume});
+  Future<void> setSpeed(double value) async {
+    await _channel.invokeMethod('setSpeed', {'speed': value});
+  }
+
+  @override
+  Future<void> setVolume(double value) async {
+    await _channel.invokeMethod('setVolume', {'volume': value});
+  }
+
+  @override
+  Future<void> setMute(bool value) async {
+    await _channel.invokeMethod('setMute', {'isMute': value});
   }
 
   @override

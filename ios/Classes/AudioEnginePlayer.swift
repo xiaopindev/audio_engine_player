@@ -14,11 +14,19 @@ enum LoopMode {
 }
 
 class AudioEnginePlayer {
-    var onPlaybackProgressUpdate: ((Int) -> Void)?
+    //MARK: Public Property
+    var onPlayingStatusChanged: ((Bool) -> ())?
+    var onPlaybackProgressUpdate: ((Int) -> ())?
     /// 播放总时长，单位毫秒
     var totalDuration: Int = 0
-    /// 音量控制
+    /// 是否静音
+    var isMute : Bool = false
+    /// 音量控制，限制音量范围在 0.0 到 1.0 之间
     var volume : Float = 1.0
+    /// 播放速度，限制播放速度范围在 0.5 到 2.0 之间
+    var speed : Float = 1.0
+    /// 当前播放索引
+    var currentPlayIndex: Int = 0
     
     //MARK: Private Property
     private var audioEngine: AVAudioEngine
@@ -39,7 +47,6 @@ class AudioEnginePlayer {
     private var progressUpdateTimer: DispatchSourceTimer?
     
     private var playlist: [String] = []
-    private var currentTrackIndex: Int = 0
     
     private var loopMode: LoopMode = .all
     
@@ -137,12 +144,14 @@ class AudioEnginePlayer {
         }
         timer.resume()
         progressUpdateTimer = timer
+        onPlayingStatusChanged?(true)
     }
     
     private func stopProgressUpdateTimer() {
         playbackProgress = 0
         progressUpdateTimer?.cancel()
         progressUpdateTimer = nil
+        onPlayingStatusChanged?(false)
     }
     
     private func downloadFile(from url: URL, completion: @escaping (URL?) -> Void) {
@@ -193,12 +202,12 @@ class AudioEnginePlayer {
         }
     }
     private func playCurrentTrack() {
-        guard !playlist.isEmpty, currentTrackIndex < playlist.count else {
+        guard !playlist.isEmpty, currentPlayIndex < playlist.count else {
             print("播放列表为空或索引无效")
             return
         }
         
-        let filePath = playlist[currentTrackIndex];
+        let filePath = playlist[currentPlayIndex];
         play(with: filePath)
     }
     
@@ -211,7 +220,7 @@ class AudioEnginePlayer {
             playRandomTrack()
             return
         }
-        currentTrackIndex = (currentTrackIndex + 1) % playlist.count
+        currentPlayIndex = (currentPlayIndex + 1) % playlist.count
         playCurrentTrack()
     }
     
@@ -224,7 +233,7 @@ class AudioEnginePlayer {
             playRandomTrack()
             return
         }
-        currentTrackIndex = (currentTrackIndex - 1 + playlist.count) % playlist.count
+        currentPlayIndex = (currentPlayIndex - 1 + playlist.count) % playlist.count
         playCurrentTrack()
     }
     
@@ -233,7 +242,7 @@ class AudioEnginePlayer {
             print("播放列表为空")
             return
         }
-        currentTrackIndex = Int.random(in: 0..<playlist.count)
+        currentPlayIndex = Int.random(in: 0..<playlist.count)
         playCurrentTrack()
     }
     
@@ -321,6 +330,14 @@ class AudioEnginePlayer {
         }
     }
     
+    public func pause() {
+        playerNode.pause()
+        isPaused = true
+        isPlaying = false
+        onPlayingStatusChanged?(false)
+        stopProgressUpdateTimer()
+    }
+    
     public func stop() {
         // 停止更新播放进度的定时器
         stopProgressUpdateTimer()
@@ -336,26 +353,27 @@ class AudioEnginePlayer {
         // 更新播放状态
         isPlaying = false
         isPaused = false
+        onPlayingStatusChanged?(false)
 
         // 重置播放进度
         seekPosition = 0
         playbackProgress = 0
-        onPlaybackProgressUpdate?(playbackProgress) // 回调重置后的播放进度
+        onPlaybackProgressUpdate?(playbackProgress)
     }
     
     public func setPlaylist(_ urls: [String], autoPlay:Bool = true) {
         playlist = urls
-        currentTrackIndex = 0
+        currentPlayIndex = 0
         if (autoPlay){
-            play(with: urls[currentTrackIndex])
+            play(with: urls[currentPlayIndex])
         }
     }
     
     public func appendToPlaylist(_ url: String, autoPlay:Bool = false){
         playlist.append(url)
         if (autoPlay){
-            currentTrackIndex = playlist.count - 1
-            play(with: playlist[currentTrackIndex])
+            currentPlayIndex = playlist.count - 1
+            play(with: playlist[currentPlayIndex])
         }
     }
     
@@ -366,12 +384,25 @@ class AudioEnginePlayer {
     public func playPrevious() {
         playPreviousTrack()
     }
+    
+    public func setSpeed(_ speed: Float) {
+        let clampedRate = max(0.5, min(speed, 2.0)) // 限制播放速度范围在 0.5 到 2.0 之间
+        self.speed = clampedRate
+        playerNode.rate = clampedRate
+        print("播放速度设置为：\(clampedRate)")
+    }
 
     public func setVolume(_ volume: Float) {
         let clampedVolume = max(0.0, min(volume, 1.0)) // 限制音量范围在 0.0 到 1.0 之间
         self.volume = clampedVolume
         playerNode.volume = clampedVolume
         print("音量设置为：\(clampedVolume)")
+    }
+    
+    public func setIsMute(_ isMute: Bool) {
+        self.isMute = isMute
+        playerNode.volume = isMute ? 0 : 1;
+        print("静音状态为：\(isMute)")
     }
     
     public func setLoopMode(_ mode: LoopMode) {

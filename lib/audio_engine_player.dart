@@ -1,17 +1,27 @@
 import 'dart:async';
 import 'audio_engine_player_platform_interface.dart';
 
+enum PlayerEventType { playbackProgress, playingStatus }
+
 class AudioEnginePlayer {
   Future<String?> get platformVersion async {
     return AudioEnginePlayerPlatform.instance.getPlatformVersion();
   }
 
   Future<int> get duration async {
-    return AudioEnginePlayerPlatform.instance.getTotalDuration();
+    return AudioEnginePlayerPlatform.instance.duration();
   }
 
   Future<double> get volume async {
-    return AudioEnginePlayerPlatform.instance.getVolume();
+    return AudioEnginePlayerPlatform.instance.volume();
+  }
+
+  Future<bool> get isMute async {
+    return AudioEnginePlayerPlatform.instance.isMute();
+  }
+
+  Future<int> get currentPlayIndex async {
+    return AudioEnginePlayerPlatform.instance.currentPlayIndex();
   }
 
   Future<void> play(String filePath) async {
@@ -24,6 +34,10 @@ class AudioEnginePlayer {
 
   Future<void> playOrPause() async {
     return AudioEnginePlayerPlatform.instance.playOrPause();
+  }
+
+  Future<void> pause() async {
+    return AudioEnginePlayerPlatform.instance.pause();
   }
 
   Future<void> stop() async {
@@ -46,8 +60,16 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.playPrevious();
   }
 
-  Future<void> setVolume(double volume) async {
-    return AudioEnginePlayerPlatform.instance.setVolume(volume);
+  Future<void> setSpeed(double value) async {
+    return AudioEnginePlayerPlatform.instance.setSpeed(value);
+  }
+
+  Future<void> setVolume(double value) async {
+    return AudioEnginePlayerPlatform.instance.setVolume(value);
+  }
+
+  Future<void> setMute(bool value) async {
+    return AudioEnginePlayerPlatform.instance.setMute(value);
   }
 
   Future<void> setLoopMode(int mode) async {
@@ -70,14 +92,17 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.clearCaches();
   }
 
-  Stream<Map<String, dynamic>> get onPlaybackProgress {
+  Stream<(String, Map<String, dynamic>)> get onPlayerEvents {
     return AudioEnginePlayerPlatform.instance.onEventStream
-        .where((event) => event['event'] == 'playbackProgress')
-        .map(
-          (event) => {
-            'progress': event['progress'] as int? ?? 0,
-            'duration': event['duration'] as int? ?? 0,
-          },
-        );
+        .where((event) => event['event'] != null)
+        .map((event) {
+      try {
+        final eventType = event['event'] as String;
+        final eventData = Map<String, dynamic>.from(event)..remove('event');
+        return (eventType, eventData);
+      } catch (e) {
+        return ('error', {'desc': e.toString()});
+      }
+    });
   }
 }

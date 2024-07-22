@@ -32,7 +32,7 @@ class AudioControlPanel extends StatefulWidget {
 
 class _AudioControlPanelState extends State<AudioControlPanel> {
   final AudioEnginePlayer _audioEnginePlayer = AudioEnginePlayer();
-  StreamSubscription? _playbackProgressSubscription;
+  StreamSubscription? _playerEventsSubscription;
   final List<double> _frequencies = [
     32,
     64,
@@ -67,17 +67,27 @@ class _AudioControlPanelState extends State<AudioControlPanel> {
   @override
   void initState() {
     super.initState();
-    _playbackProgressSubscription =
-        _audioEnginePlayer.onPlaybackProgress.listen((map) {
-      _currentPosition = map["progress"];
-      _duration = map["duration"];
-      setState(() {});
+    _playerEventsSubscription =
+        _audioEnginePlayer.onPlayerEvents.listen((event) {
+      final eventType = event.$1;
+      final eventData = event.$2;
+
+      if (eventType == 'playbackProgress') {
+        _currentPosition = eventData["progress"] as int;
+        _duration = eventData["duration"] as int;
+        setState(() {});
+      } else if (eventType == 'playingStatus') {
+        final isPlaying = eventData["isPlaying"] as bool;
+        print('isPlaying $isPlaying');
+      } else if (eventType == 'error') {
+        print('Error: ${eventData["desc"]}');
+      }
     });
   }
 
   @override
   void dispose() {
-    _playbackProgressSubscription?.cancel();
+    _playerEventsSubscription?.cancel();
     super.dispose();
   }
 
