@@ -18,17 +18,20 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
     case "getPlatformVersion":
       result("iOS " + UIDevice.current.systemVersion)
     case "duration":
-      let duration = audioEnginePlayer.totalDuration
-      result(duration)
+      let value = audioEnginePlayer.totalDuration
+      result(value)
     case "volume":
-      let volume = audioEnginePlayer.volume
-      result(volume)
+      let value = audioEnginePlayer.volume
+      result(value)
     case "isMute":
-      let isMute = audioEnginePlayer.isMute
-      result(isMute)
+      let value = audioEnginePlayer.isMute
+      result(value)
+    case "enableFadeEffect":
+      let value = audioEnginePlayer.enableFadeEffect
+      result(value)
     case "speed":
-      let speed = audioEnginePlayer.speed
-      result(speed)
+      let value = audioEnginePlayer.speed
+      result(value)
     case "currentPlayIndex":
       let currentPlayIndex = audioEnginePlayer.currentPlayIndex
       result(currentPlayIndex)
@@ -113,9 +116,23 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
       } else {
         result(FlutterError(code: "INVALID_ARGUMENT", message: "volume is required", details: nil))
       }
+    case "setVolumeBoost":
+      if let args = call.arguments as? [String: Any], let value = args["gain"] as? Float {
+        audioEnginePlayer.setVolumeBoost(value)
+        result(nil)
+      } else {
+        result(FlutterError(code: "INVALID_ARGUMENT", message: "volume is required", details: nil))
+      }
     case "setMute":
       if let args = call.arguments as? [String: Any], let value = args["isMute"] as? Bool {
         audioEnginePlayer.setIsMute(value)
+        result(nil)
+      } else {
+        result(FlutterError(code: "INVALID_ARGUMENT", message: "isMute is required", details: nil))
+      }
+    case "setEnableFadeEffect":
+      if let args = call.arguments as? [String: Any], let value = args["enableFadeEffect"] as? Bool {
+        audioEnginePlayer.setEnableFadeEffect(value)
         result(nil)
       } else {
         result(FlutterError(code: "INVALID_ARGUMENT", message: "isMute is required", details: nil))
@@ -164,31 +181,25 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
     }
   }
 
-  private func setupPlaybackProgressCallback() {
-    audioEnginePlayer.onPlaybackProgressUpdate = { [weak self] progress in
-      guard let self = self else { return }
-      self.eventSink?(["event": "playbackProgress", "progress": progress, "duration": audioEnginePlayer.totalDuration])
-    }
-  }
-
-  private func setupPlayStatusCallback() {
+  private func setupCallbacks() {
     audioEnginePlayer.onPlayingStatusChanged = { [weak self] isPlaying in
-      guard let self = self else { return }
-      self.eventSink?(["event": "playingStatus", "isPlaying": isPlaying])
+      guard let self = self, let eventSink = self.eventSink else { return }
+      eventSink(["event": "playingStatus", "isPlaying": isPlaying])
     }
-  }
 
-  private func setupPlayCompletedCallback() {
-    audioEnginePlayer.onPlayCompleted = { [weak self] in
-      guard let self = self else { return }
-      self.eventSink?(["event": "playCompleted", "isCompleted": true])
-    }
-  }
-
-  private func setupPlayingIndexCallback() {
     audioEnginePlayer.onPlayingIndexChanged = { [weak self] index in
-      guard let self = self else { return }
-      self.eventSink?(["event": "playingIndex", "currentIndex": index])
+      guard let self = self, let eventSink = self.eventSink else { return }
+      eventSink(["event": "playingIndex", "currentIndex": index])
+    }
+
+    audioEnginePlayer.onPlaybackProgressUpdate = { [weak self] progress in
+      guard let self = self, let eventSink = self.eventSink else { return }
+      eventSink(["event": "playbackProgress", "progress": progress, "duration": self.audioEnginePlayer.totalDuration])
+    }
+
+    audioEnginePlayer.onPlayCompleted = { [weak self] in
+      guard let self = self, let eventSink = self.eventSink else { return }
+      eventSink(["event": "playCompleted", "isCompleted": true])
     }
   }
 }
@@ -196,10 +207,7 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
 extension AudioEnginePlayerPlugin: FlutterStreamHandler {
   public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
     self.eventSink = events
-    setupPlaybackProgressCallback()
-    setupPlayStatusCallback()
-    setupPlayCompletedCallback()
-    setupPlayingIndexCallback()
+    setupCallbacks()
     return nil
   }
 

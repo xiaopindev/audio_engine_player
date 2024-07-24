@@ -90,8 +90,16 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.setVolume(value);
   }
 
+  Future<void> setVolumeBoost(double value) async {
+    return AudioEnginePlayerPlatform.instance.setVolumeBoost(value);
+  }
+
   Future<void> setMute(bool value) async {
     return AudioEnginePlayerPlatform.instance.setMute(value);
+  }
+
+  Future<void> setEnableFadeEffect(bool value) async {
+    return AudioEnginePlayerPlatform.instance.setEnableFadeEffect(value);
   }
 
   Future<void> setLoopMode(int mode) async {

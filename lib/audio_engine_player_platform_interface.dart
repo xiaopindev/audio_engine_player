@@ -23,6 +23,8 @@ abstract class AudioEnginePlayerPlatform extends PlatformInterface {
 
   Future<bool> isMute();
 
+  Future<bool> enableFadeEffect();
+
   Future<int> currentPlayIndex();
 
   Future<bool> isPlaying();
@@ -55,7 +57,11 @@ abstract class AudioEnginePlayerPlatform extends PlatformInterface {
 
   Future<void> setVolume(double value);
 
+  Future<void> setVolumeBoost(double value);
+
   Future<void> setMute(bool value);
+
+  Future<void> setEnableFadeEffect(bool value);
 
   Future<void> setLoopMode(int mode);
 

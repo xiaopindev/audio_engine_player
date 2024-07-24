@@ -33,6 +33,12 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   }
 
   @override
+  Future<bool> enableFadeEffect() async {
+    final bool value = await _channel.invokeMethod('enableFadeEffect') ?? false;
+    return value;
+  }
+
+  @override
   Future<int> currentPlayIndex() async {
     final int currentPlayIndex =
         await _channel.invokeMethod('currentPlayIndex') ?? 0;
@@ -119,8 +125,19 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   }
 
   @override
+  Future<void> setVolumeBoost(double value) async {
+    await _channel.invokeMethod('setVolumeBoost', {'gain': value});
+  }
+
+  @override
   Future<void> setMute(bool value) async {
     await _channel.invokeMethod('setMute', {'isMute': value});
+  }
+
+  @override
+  Future<void> setEnableFadeEffect(bool value) async {
+    await _channel
+        .invokeMethod('setEnableFadeEffect', {'enableFadeEffect': value});
   }
 
   @override

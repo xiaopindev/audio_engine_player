@@ -104,25 +104,27 @@ class _AudioControlPanelState extends State<AudioControlPanel> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 500,
-            child: ListView.builder(
-              itemCount: _frequencies.length,
-              itemBuilder: (context, index) {
-                final frequency = _frequencies[index];
-                return _buildSlider(index, frequency);
-              },
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            SizedBox(
+              height: 500,
+              child: ListView.builder(
+                itemCount: _frequencies.length,
+                itemBuilder: (context, index) {
+                  final frequency = _frequencies[index];
+                  return _buildSlider(index, frequency);
+                },
+              ),
             ),
-          ),
-          _buildVolumeSlider(),
-          _buildProgressSlider(),
-          Text('Progress: $_currentPosition/$_duration'),
-          const SizedBox(height: 20),
-          _buildControlButtons(),
-          const SizedBox(height: 20),
-        ],
+            _buildVolumeSlider(),
+            _buildProgressSlider(),
+            Text('Progress: $_currentPosition/$_duration'),
+            const SizedBox(height: 20),
+            _buildControlButtons(),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
