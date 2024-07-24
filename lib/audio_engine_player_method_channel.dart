@@ -99,9 +99,9 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   }
 
   @override
-  Future<void> swapOnPlaylist(int oldIndex, int newIndex) async {
+  Future<void> moveOnPlaylist(int oldIndex, int newIndex) async {
     await _channel.invokeMethod(
-        'swapOnPlaylist', {'oldIndex': oldIndex, 'newIndex': newIndex});
+        'moveOnPlaylist', {'oldIndex': oldIndex, 'newIndex': newIndex});
   }
 
   @override

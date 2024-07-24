@@ -47,7 +47,7 @@ abstract class AudioEnginePlayerPlatform extends PlatformInterface {
 
   Future<void> removeFromPlaylist(int index);
 
-  Future<void> swapOnPlaylist(int oldIndex, int newIndex);
+  Future<void> moveOnPlaylist(int oldIndex, int newIndex);
 
   Future<void> playNext();
 

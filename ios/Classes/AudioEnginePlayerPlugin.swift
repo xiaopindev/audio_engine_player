@@ -89,9 +89,9 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
       } else {
         result(FlutterError(code: "INVALID_ARGUMENT", message: "url and autoPlay are required", details: nil))
       }
-    case "swapOnPlaylist":
+    case "moveOnPlaylist":
       if let args = call.arguments as? [String: Any], let oldIndex = args["oldIndex"] as? Int, let newIndex = args["newIndex"] as? Int {
-        audioEnginePlayer.swapOnPlaylist(oldIndex, newIndex);
+        audioEnginePlayer.moveOnPlaylist(oldIndex, newIndex);
         result(nil)
       } else {
         result(FlutterError(code: "INVALID_ARGUMENT", message: "url and autoPlay are required", details: nil))

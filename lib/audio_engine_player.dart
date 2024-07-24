@@ -69,9 +69,9 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.removeFromPlaylist(index);
   }
 
-  Future<void> swapOnPlaylist(int oldIndex, int newIndex) async {
+  Future<void> moveOnPlaylist(int oldIndex, int newIndex) async {
     return AudioEnginePlayerPlatform.instance
-        .swapOnPlaylist(oldIndex, newIndex);
+        .moveOnPlaylist(oldIndex, newIndex);
   }
 
   Future<void> playNext() async {

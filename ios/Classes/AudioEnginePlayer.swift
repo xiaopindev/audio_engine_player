@@ -485,21 +485,26 @@ class AudioEnginePlayer {
         }
     }
     
-    public func swapOnPlaylist(_ oldIndex: Int, _ newIndex: Int) {
+    public func moveOnPlaylist(_ oldIndex: Int, _ newIndex: Int) {
         guard oldIndex >= 0 && oldIndex < playlist.count,
               newIndex >= 0 && newIndex < playlist.count else {
             print("无效的索引：oldIndex: \(oldIndex), newIndex: \(newIndex)")
             return
         }
         
-        // 交换播放列表中的两个索引值
-        playlist.swapAt(oldIndex, newIndex)
+        // 获取要移动的元素
+        let element = playlist.remove(at: oldIndex)
         
-        // 如果当前播放索引是其中一个索引，更新当前播放索引
+        // 将元素插入到新位置
+        playlist.insert(element, at: newIndex)
+        
+        // 更新当前播放索引
         if currentPlayIndex == oldIndex {
             currentPlayIndex = newIndex
-        } else if currentPlayIndex == newIndex {
-            currentPlayIndex = oldIndex
+        } else if oldIndex < currentPlayIndex && newIndex >= currentPlayIndex {
+            currentPlayIndex -= 1
+        } else if oldIndex > currentPlayIndex && newIndex <= currentPlayIndex {
+            currentPlayIndex += 1
         }
     }
     
