@@ -33,8 +33,10 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.isPlaying();
   }
 
-  Future<void> play(String filePath) async {
-    return AudioEnginePlayerPlatform.instance.play(filePath);
+  Future<void> play(
+      String filePath, String title, String artist, String album) {
+    return AudioEnginePlayerPlatform.instance
+        .play(filePath, title, artist, album);
   }
 
   Future<void> seekTo(int milliseconds) async {
@@ -57,12 +59,14 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.stop();
   }
 
-  Future<void> setPlaylist(List<String> urls, bool autoPlay) async {
-    return AudioEnginePlayerPlatform.instance.setPlaylist(urls, autoPlay);
+  Future<void> setPlaylist(List<Map<String, String>> tracks, bool autoPlay) {
+    return AudioEnginePlayerPlatform.instance.setPlaylist(tracks, autoPlay);
   }
 
-  Future<void> appendToPlaylist(String url, bool autoPlay) async {
-    return AudioEnginePlayerPlatform.instance.appendToPlaylist(url, autoPlay);
+  Future<void> appendToPlaylist(
+      String source, String title, String artist, String album, bool autoPlay) {
+    return AudioEnginePlayerPlatform.instance
+        .appendToPlaylist(source, title, artist, album, autoPlay);
   }
 
   Future<void> removeFromPlaylist(int index) async {

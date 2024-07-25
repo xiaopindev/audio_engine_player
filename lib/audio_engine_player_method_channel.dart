@@ -52,8 +52,14 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   }
 
   @override
-  Future<void> play(String filePath) async {
-    await _channel.invokeMethod('play', {'filePath': filePath});
+  Future<void> play(
+      String filePath, String title, String artist, String album) async {
+    await _channel.invokeMethod<void>('play', {
+      'filePath': filePath,
+      'title': title,
+      'artist': artist,
+      'album': album,
+    });
   }
 
   @override
@@ -82,15 +88,24 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   }
 
   @override
-  Future<void> setPlaylist(List<String> urls, bool autoPlay) async {
-    await _channel
-        .invokeMethod('setPlaylist', {'urls': urls, 'autoPlay': autoPlay});
+  Future<void> setPlaylist(
+      List<Map<String, String>> tracks, bool autoPlay) async {
+    await _channel.invokeMethod<void>('setPlaylist', {
+      'tracks': tracks,
+      'autoPlay': autoPlay,
+    });
   }
 
   @override
-  Future<void> appendToPlaylist(String url, bool autoPlay) async {
-    await _channel
-        .invokeMethod('appendToPlaylist', {'url': url, 'autoPlay': autoPlay});
+  Future<void> appendToPlaylist(String source, String title, String artist,
+      String album, bool autoPlay) async {
+    await _channel.invokeMethod<void>('appendToPlaylist', {
+      'source': source,
+      'title': title,
+      'artist': artist,
+      'album': album,
+      'autoPlay': autoPlay,
+    });
   }
 
   @override

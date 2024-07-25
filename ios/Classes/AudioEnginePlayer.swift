@@ -6,11 +6,20 @@
 //
 
 import AVFoundation
+import MediaPlayer
 
 enum LoopMode {
     case single
     case all
     case shuffle
+}
+
+struct TrackModel {
+    var source:String
+    var title:String
+    var artist:String
+    var album:String
+    var albumArt:UIImage?
 }
 
 class AudioEnginePlayer {
@@ -38,8 +47,8 @@ class AudioEnginePlayer {
     var isPlaying: Bool = false
     
     //MARK: Private Property
+    private var audioSession: AVAudioSession
     private var audioFile: AVAudioFile?
-
     private var audioEngine: AVAudioEngine
     private var playerNode: AVAudioPlayerNode
     private var varispeed: AVAudioUnitVarispeed
@@ -56,19 +65,23 @@ class AudioEnginePlayer {
     private var playbackProgress: Int = 0
     private var progressUpdateTimer: DispatchSourceTimer?
     
-    private var playlist: [String] = []
+    private var playlist: [TrackModel] = []
     
     private var loopMode: LoopMode = .all
     
     init() {
+        audioSession = AVAudioSession.sharedInstance()
         playerNode = AVAudioPlayerNode()
         audioEngine = AVAudioEngine()
         varispeed = AVAudioUnitVarispeed()
         volumeBooster = AVAudioUnitEQ(numberOfBands: 1) // 初始化音量放大器
         equalizer = AVAudioUnitEQ(numberOfBands: 10)
         reverb = AVAudioUnitReverb()
+        
         initEqualizer()
         setupAudioEngine()
+        setupAudioSession()
+        setupRemoteTransportControls()
     }
     
     //MARK: Private Methods
@@ -90,6 +103,91 @@ class AudioEnginePlayer {
         } catch {
             print("音频引擎启动失败: \(error)")
         }
+    }
+    
+    private func setupAudioSession() {
+            do {
+                try audioSession.setCategory(.playback, mode: .default)
+                try audioSession.setActive(true)
+            } catch {
+                print("设置音频会话失败: \(error)")
+            }
+        }
+
+    private func setupRemoteTransportControls() {
+        let commandCenter = MPRemoteCommandCenter.shared()
+        
+        commandCenter.playCommand.addTarget { [unowned self] event in
+            if self.isPaused {
+                self.playOrPause()
+                return .success
+            }
+            return .commandFailed
+        }
+        
+        commandCenter.pauseCommand.addTarget { [unowned self] event in
+            if self.isPlaying {
+                self.playOrPause()
+                return .success
+            }
+            return .commandFailed
+        }
+        
+        commandCenter.nextTrackCommand.addTarget { [unowned self] event in
+            self.playNext()
+            return .success
+        }
+        
+        commandCenter.previousTrackCommand.addTarget { [unowned self] event in
+            self.playPrevious()
+            return .success
+        }
+
+        commandCenter.changePlaybackPositionCommand.addTarget { [unowned self] event in
+            if let event = event as? MPChangePlaybackPositionCommandEvent {
+                self.seekTo(milliseconds: Int(event.positionTime * 1000))
+                return .success
+            }
+            return .commandFailed
+        }
+    }
+    
+    // 更新锁屏和控制中心的播放信息
+    private func updateNowPlayingInfo() {
+        var nowPlayingInfo = [String: Any]()
+        
+        if let currentTrack = getCurrentTrack() {
+            nowPlayingInfo[MPMediaItemPropertyTitle] = currentTrack.title
+            nowPlayingInfo[MPMediaItemPropertyArtist] = currentTrack.artist
+            nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = currentTrack.album
+            
+            if let artwork = currentTrack.artwork {
+                nowPlayingInfo[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: artwork.size) { size in
+                    return artwork
+                }
+            }
+        }
+        
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = playbackProgress / 1000
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = totalDuration / 1000
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+        
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+    }
+    
+    // 添加获取当前播放曲目信息的方法
+    private func getCurrentTrack() -> (title: String, artist: String, album: String, artwork: UIImage?)? {
+        guard !playlist.isEmpty, currentPlayIndex < playlist.count else {
+            return nil
+        }
+        
+        let currentTrack = playlist[currentPlayIndex]
+        return (
+            title: currentTrack.title,
+            artist: currentTrack.artist,
+            album: currentTrack.album,
+            artwork: currentTrack.albumArt
+        )
     }
     
     private func restartEngine() {
@@ -138,6 +236,8 @@ class AudioEnginePlayer {
             self.isPlaying = true
             
             startProgressUpdateTimer()
+            
+            updateNowPlayingInfo()
         } catch {
             print("Error loading audio file: \(error)")
         }
@@ -234,8 +334,8 @@ class AudioEnginePlayer {
             return
         }
         
-        let filePath = playlist[currentPlayIndex];
-        play(with: filePath)
+        let track = playlist[currentPlayIndex];
+        play(with: track)
     }
     
     private func playNextTrack() {
@@ -292,14 +392,15 @@ class AudioEnginePlayer {
     }
     
     //MARK: Public Methods
-    public func play(with filePath: String) {
+    public func play(with track: TrackModel) {
+        let filePath = track.source
         print("Play filePath \(filePath)")
         stop()
-        if !playlist.contains(filePath) {
-            playlist.append(filePath)
+        if !playlist.contains(where: {$0.source == filePath}) {
+            playlist.append(track)
             currentPlayIndex = playlist.count - 1
         } else {
-            currentPlayIndex = playlist.firstIndex(of: filePath) ?? 0
+            currentPlayIndex = playlist.firstIndex(where: {$0.source == filePath}) ?? 0
         }
         onPlayingIndexChanged?(currentPlayIndex)
         if let url = URL(string: filePath), url.scheme == "http" || url.scheme == "https" {
@@ -363,6 +464,8 @@ class AudioEnginePlayer {
             
             // 开始更新播放进度的定时器
             startProgressUpdateTimer()
+            
+            updateNowPlayingInfo()
         } catch {
             print("Seek操作失败: \(error)")
         }
@@ -380,7 +483,7 @@ class AudioEnginePlayer {
     public func playOrPause() {
         if isPlaying {
             if enableFadeEffect {
-                fadeVolume(to: 0.0, duration: 2.0) { // 淡出
+                fadeVolume(to: 0.0, duration: 1.5) { // 淡出
                     self.playerNode.pause()
                     self.isPaused = true
                     self.isPlaying = false
@@ -398,7 +501,7 @@ class AudioEnginePlayer {
                 self.isPaused = false
                 self.isPlaying = true
                 self.startProgressUpdateTimer()
-                fadeVolume(to: self.volume, duration: 2.0) // 淡入
+                fadeVolume(to: self.volume, duration: 1.5) // 淡入
             } else {
                 self.playerNode.play()
                 self.isPaused = false
@@ -406,6 +509,7 @@ class AudioEnginePlayer {
                 self.startProgressUpdateTimer()
             }
         }
+        updateNowPlayingInfo()
     }
     
     public func pause() {
@@ -413,6 +517,7 @@ class AudioEnginePlayer {
         isPaused = true
         isPlaying = false
         stopProgressUpdateTimer()
+        updateNowPlayingInfo()
     }
     
     public func stop() {
@@ -436,19 +541,20 @@ class AudioEnginePlayer {
         seekPosition = 0
         playbackProgress = 0
         onPlaybackProgressUpdate?(playbackProgress)
+        updateNowPlayingInfo()
     }
     
-    public func setPlaylist(_ urls: [String], autoPlay:Bool = true) {
+    public func setPlaylist(_ tracks: [TrackModel], autoPlay:Bool = true) {
         stop()
-        playlist = urls
+        playlist = tracks
         currentPlayIndex = 0
         if (autoPlay){
-            play(with: urls[currentPlayIndex])
+            play(with: tracks[currentPlayIndex])
         }
     }
     
-    public func appendToPlaylist(_ url: String, autoPlay:Bool = false){
-        playlist.append(url)
+    public func appendToPlaylist(_ track: TrackModel, autoPlay:Bool = false){
+        playlist.append(track)
         if (autoPlay){
             currentPlayIndex = playlist.count - 1
             play(with: playlist[currentPlayIndex])
