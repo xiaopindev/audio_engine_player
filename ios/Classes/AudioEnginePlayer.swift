@@ -74,7 +74,7 @@ class AudioEnginePlayer {
         playerNode = AVAudioPlayerNode()
         audioEngine = AVAudioEngine()
         varispeed = AVAudioUnitVarispeed()
-        volumeBooster = AVAudioUnitEQ(numberOfBands: 1) // 初始化音量放大器
+        volumeBooster = AVAudioUnitEQ(numberOfBands: 1)
         equalizer = AVAudioUnitEQ(numberOfBands: 10)
         reverb = AVAudioUnitReverb()
         
@@ -89,7 +89,7 @@ class AudioEnginePlayer {
     private func setupAudioEngine() {
         audioEngine.attach(playerNode)
         audioEngine.attach(varispeed)
-        audioEngine.attach(volumeBooster) // 附加音量放大器
+        audioEngine.attach(volumeBooster)
         audioEngine.attach(equalizer)
         audioEngine.attach(reverb)
         
@@ -106,13 +106,13 @@ class AudioEnginePlayer {
     }
     
     private func setupAudioSession() {
-            do {
-                try audioSession.setCategory(.playback, mode: .default)
-                try audioSession.setActive(true)
-            } catch {
-                print("设置音频会话失败: \(error)")
-            }
+        do {
+            try audioSession.setCategory(.playback, mode: .default)
+            try audioSession.setActive(true)
+        } catch {
+            print("设置音频会话失败: \(error)")
         }
+    }
 
     private func setupRemoteTransportControls() {
         let commandCenter = MPRemoteCommandCenter.shared()
@@ -231,7 +231,6 @@ class AudioEnginePlayer {
             }
             self.playerNode.scheduleFile(self.audioFile!, at: nil, completionHandler: nil)
             self.restartEngine()
-            //self.playerNode.prepare(withFrameCount: <#T##AVAudioFrameCount#>)
             self.playerNode.play()
             self.isPlaying = true
             
@@ -244,7 +243,7 @@ class AudioEnginePlayer {
     }
     
     private func startProgressUpdateTimer() {
-        stopProgressUpdateTimer() // 确保之前的定时器被取消
+        stopProgressUpdateTimer()
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global(qos: .background))
         timer.schedule(deadline: .now(), repeating: .milliseconds(100))
         timer.setEventHandler { [weak self] in
@@ -392,6 +391,17 @@ class AudioEnginePlayer {
     }
     
     //MARK: Public Methods
+    public func ensureEngineRunning() {
+        if !audioEngine.isRunning {
+            setupAudioSession()
+            do {
+                try audioEngine.start()
+            } catch {
+                print("无法重新启动音频引擎: \(error)")
+            }
+        }
+    }
+    
     public func play(with track: TrackModel) {
         let filePath = track.source
         print("Play filePath \(filePath)")
@@ -425,6 +435,7 @@ class AudioEnginePlayer {
         }
         
         do {
+            ensureEngineRunning()
             if isPaused || !isPlaying {
                 playerNode.play()
             }
@@ -496,6 +507,7 @@ class AudioEnginePlayer {
                 self.stopProgressUpdateTimer()
             }
         } else if isPaused {
+            ensureEngineRunning()
             if enableFadeEffect {
                 self.playerNode.play()
                 self.isPaused = false

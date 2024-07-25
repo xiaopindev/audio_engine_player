@@ -33,6 +33,10 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.isPlaying();
   }
 
+  Future<void> ensureEngineRunning() async {
+    return AudioEnginePlayerPlatform.instance.ensureEngineRunning();
+  }
+
   Future<void> play(
       String filePath, String title, String artist, String album) {
     return AudioEnginePlayerPlatform.instance

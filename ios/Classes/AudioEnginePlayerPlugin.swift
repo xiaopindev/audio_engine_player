@@ -38,6 +38,9 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
         case "isPlaying":
             let isPlaying = audioEnginePlayer.isPlaying
             result(isPlaying)
+        case "ensureEngineRunning":
+            audioEnginePlayer.ensureEngineRunning()
+            result(nil)
         case "play":
             if let args = call.arguments as? [String: Any],
                let filePath = args["filePath"] as? String,
