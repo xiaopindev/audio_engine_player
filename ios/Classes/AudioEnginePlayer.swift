@@ -468,10 +468,11 @@ class AudioEnginePlayer {
             isSeeking = true
             seekPosition = milliseconds
                     
-            // 开始播放            
+            // 开始播放
             playerNode.play()
             isPaused = false
             isPlaying = true
+            fadeVolume(to: self.volume, duration: 1.5)
             
             // 开始更新播放进度的定时器
             startProgressUpdateTimer()
@@ -494,11 +495,11 @@ class AudioEnginePlayer {
     public func playOrPause() {
         if isPlaying {
             if enableFadeEffect {
+                self.isPaused = true
+                self.isPlaying = false
+                self.stopProgressUpdateTimer()
                 fadeVolume(to: 0.0, duration: 1.5) { // 淡出
                     self.playerNode.pause()
-                    self.isPaused = true
-                    self.isPlaying = false
-                    self.stopProgressUpdateTimer()
                 }
             } else {
                 self.playerNode.pause()
