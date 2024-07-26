@@ -56,8 +56,8 @@ class AudioEnginePlayer {
     private var equalizer: AVAudioUnitEQ
     private var reverb: AVAudioUnitReverb
     
+    private var isProcessing: Bool = false
     private var isPaused: Bool = false
-    private var isSeeking: Bool = false
     /// 单位：毫秒
     private var seekPosition: Int = 0
     
@@ -233,6 +233,9 @@ class AudioEnginePlayer {
             self.restartEngine()
             self.playerNode.play()
             self.isPlaying = true
+            if !self.isMute {
+                self.playerNode.volume = self.volume
+            }
             
             startProgressUpdateTimer()
             
@@ -249,13 +252,12 @@ class AudioEnginePlayer {
         timer.setEventHandler { [weak self] in
             guard let self = self else { return }
             let currentTime = self.playerNode.current + Double(seekPosition/1000)
-            let progress = Int(currentTime * 1000)
+            let progress = max(0, Int(currentTime * 1000))
             //print("self.playerNode.current :\(self.playerNode.current) + \(seekPosition/1000) = currentTime: \(currentTime)")
             //print("PlayerNode isPlayer = \(self.playerNode.isPlaying)")
             DispatchQueue.main.async {
-                if self.isSeeking {
+                if self.seekPosition > 0 {
                     self.playbackProgress = self.seekPosition
-                    self.isSeeking = false
                 } else {
                     self.playbackProgress = progress
                 }
@@ -316,6 +318,7 @@ class AudioEnginePlayer {
     private func handlePlaybackCompletion() {
         onPlayCompleted?()
         seekPosition = 0
+        isProcessing = false
         stopProgressUpdateTimer()
         switch loopMode {
         case .single:
@@ -434,11 +437,21 @@ class AudioEnginePlayer {
             return
         }
         
+        if (isProcessing){
+            print("isProcessing")
+            return;
+        }
+        
+        // 设置跳转标志位和目标时间
+        isProcessing = true
+        seekPosition = milliseconds
+        
         do {
             ensureEngineRunning()
-            if isPaused || !isPlaying {
-                playerNode.play()
+            if !isPaused && isPlaying {
+                pause()
             }
+            playerNode.play()
             
             guard let nodeTime = self.playerNode.lastRenderTime,
                   let playerTime = self.playerNode.playerTime(forNodeTime: nodeTime) else {
@@ -452,7 +465,7 @@ class AudioEnginePlayer {
             // 计算剩余播放时长（单位：秒）
             let length = (totalDuration - milliseconds) / 1000
             // 计算剩余播放帧数
-            let framesToPlay = AVAudioFrameCount(Float(playerTime.sampleRate) * Float(length))
+            let framesToPlay = AVAudioFrameCount(max(0, Float(playerTime.sampleRate) * Float(length)))
             
             print("newSampleTime \(newSampleTime) framesToPlay: \(framesToPlay)")
             
@@ -464,15 +477,13 @@ class AudioEnginePlayer {
                 playerNode.scheduleSegment(audioFile, startingFrame: newSampleTime, frameCount: framesToPlay, at: nil, completionHandler: nil)
             }
             
-            // 设置跳转标志位和目标时间
-            isSeeking = true
-            seekPosition = milliseconds
-                    
             // 开始播放
+            if !self.isMute {
+                self.playerNode.volume = self.volume
+            }
             playerNode.play()
             isPaused = false
             isPlaying = true
-            fadeVolume(to: self.volume, duration: 1.5)
             
             // 开始更新播放进度的定时器
             startProgressUpdateTimer()
@@ -481,6 +492,7 @@ class AudioEnginePlayer {
         } catch {
             print("Seek操作失败: \(error)")
         }
+        isProcessing = false
     }
     
     public func seekToIndex(_ index: Int) {
@@ -493,18 +505,25 @@ class AudioEnginePlayer {
     }
     
     public func playOrPause() {
+        if isProcessing {
+            print("playOrPause isProcessing")
+            return
+        }
+        isProcessing = true
         if isPlaying {
             if enableFadeEffect {
                 self.isPaused = true
                 self.isPlaying = false
                 self.stopProgressUpdateTimer()
-                fadeVolume(to: 0.0, duration: 1.5) { // 淡出
-                    self.playerNode.pause()
+                fadeVolume(to: 0.0, duration: 0.7) { [weak self] in // 淡出
+                    self?.playerNode.pause()
+                    self?.isProcessing = false
                 }
             } else {
                 self.playerNode.pause()
                 self.isPaused = true
                 self.isPlaying = false
+                self.isProcessing = false
                 self.stopProgressUpdateTimer()
             }
         } else if isPaused {
@@ -521,7 +540,16 @@ class AudioEnginePlayer {
                 self.isPlaying = true
                 self.startProgressUpdateTimer()
             }
+            self.isProcessing = false
         }
+        updateNowPlayingInfo()
+    }
+    
+    public func play() {
+        self.playerNode.play()
+        self.isPaused = false
+        self.isPlaying = true
+        self.startProgressUpdateTimer()
         updateNowPlayingInfo()
     }
     
@@ -552,6 +580,7 @@ class AudioEnginePlayer {
 
         // 重置播放进度
         seekPosition = 0
+        isProcessing = false
         playbackProgress = 0
         onPlaybackProgressUpdate?(playbackProgress)
         updateNowPlayingInfo()
@@ -667,7 +696,7 @@ class AudioEnginePlayer {
     
     public func setBandGain(bandIndex: Int, gain: Float) {
         if isPlaying {
-            playOrPause()
+            pause()
         }
         guard bandIndex >= 0 && bandIndex < equalizer.bands.count else {
             print("无效的频段索引： \(bandIndex)/\(equalizer.bands.count) \(gain)")
@@ -678,14 +707,14 @@ class AudioEnginePlayer {
         restartEngine()
         
         if !isPlaying {
-            playOrPause()
+            play()
         }
     }
     
     public func setReverb(id: Int, wetDryMix: Float = 50) {
         let recordTime = playbackProgress
         if isPlaying {
-            playOrPause()
+            pause()
         }
         if let preset = AVAudioUnitReverbPreset(rawValue: id) {
             reverb.loadFactoryPreset(preset)
@@ -714,7 +743,7 @@ class AudioEnginePlayer {
         
         restartEngine()
         
-        self.seekTo(milliseconds: recordTime)
+        seekTo(milliseconds: recordTime)
     }
 
     public func setVolumeBoost(_ gain: Float) {
@@ -726,7 +755,7 @@ class AudioEnginePlayer {
     public func resetAll() {
         let recordTime = playbackProgress
         if isPlaying {
-            playOrPause()
+            pause()
         }
 
         let initialGains: [Float] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] // 重置为初始标准模式的增益值
@@ -750,7 +779,7 @@ class AudioEnginePlayer {
         
         restartEngine()
         
-        self.seekTo(milliseconds: recordTime)
+        seekTo(milliseconds: recordTime)
     }
     
     public func clearCaches() {

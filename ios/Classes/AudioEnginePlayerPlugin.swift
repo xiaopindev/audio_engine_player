@@ -41,7 +41,7 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
         case "ensureEngineRunning":
             audioEnginePlayer.ensureEngineRunning()
             result(nil)
-        case "play":
+        case "playWith":
             if let args = call.arguments as? [String: Any],
                let filePath = args["filePath"] as? String,
                let title = args["title"] as? String,
@@ -69,6 +69,9 @@ public class AudioEnginePlayerPlugin: NSObject, FlutterPlugin {
             }
         case "playOrPause":
             audioEnginePlayer.playOrPause()
+            result(nil)
+        case "play":
+            audioEnginePlayer.play()
             result(nil)
         case "pause":
             audioEnginePlayer.pause()

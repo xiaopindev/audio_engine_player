@@ -57,7 +57,7 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   }
 
   @override
-  Future<void> play(
+  Future<void> playWith(
       String filePath, String title, String artist, String album) async {
     await _channel.invokeMethod<void>('play', {
       'filePath': filePath,
@@ -80,6 +80,11 @@ class MethodChannelAudioEnginePlayer extends AudioEnginePlayerPlatform {
   @override
   Future<void> playOrPause() async {
     await _channel.invokeMethod('playOrPause');
+  }
+
+  @override
+  Future<void> play() async {
+    await _channel.invokeMethod('play');
   }
 
   @override

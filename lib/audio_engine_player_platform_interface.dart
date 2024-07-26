@@ -31,13 +31,16 @@ abstract class AudioEnginePlayerPlatform extends PlatformInterface {
 
   Future<void> ensureEngineRunning();
 
-  Future<void> play(String filePath, String title, String artist, String album);
+  Future<void> playWith(
+      String filePath, String title, String artist, String album);
 
   Future<void> seekTo(int milliseconds);
 
   Future<void> seekToIndex(int index);
 
   Future<void> playOrPause();
+
+  Future<void> play();
 
   Future<void> pause();
 

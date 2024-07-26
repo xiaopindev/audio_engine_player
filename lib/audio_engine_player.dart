@@ -37,10 +37,10 @@ class AudioEnginePlayer {
     return AudioEnginePlayerPlatform.instance.ensureEngineRunning();
   }
 
-  Future<void> play(
+  Future<void> playWith(
       String filePath, String title, String artist, String album) {
     return AudioEnginePlayerPlatform.instance
-        .play(filePath, title, artist, album);
+        .playWith(filePath, title, artist, album);
   }
 
   Future<void> seekTo(int milliseconds) async {
@@ -53,6 +53,10 @@ class AudioEnginePlayer {
 
   Future<void> playOrPause() async {
     return AudioEnginePlayerPlatform.instance.playOrPause();
+  }
+
+  Future<void> play() async {
+    return AudioEnginePlayerPlatform.instance.play();
   }
 
   Future<void> pause() async {
