@@ -82,9 +82,40 @@ class AudioEnginePlayer {
         setupAudioEngine()
         setupAudioSession()
         setupRemoteTransportControls()
+
+         // 监听音频会话中断通知
+        NotificationCenter.default.addObserver(self, selector: #selector(handleInterruption), name: AVAudioSession.interruptionNotification, object: nil)
     }
     
     //MARK: Private Methods
+    @objc private func handleInterruption(notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
+            return
+        }
+        
+        if type == .began {
+            // 音频会话中断开始
+            print("音频会话中断开始")
+            if isPlaying {
+                pause()
+            }
+        } else if type == .ended {
+            // 音频会话中断结束
+            print("音频会话中断结束")
+            guard let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt else { return }
+            let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+            if options.contains(.shouldResume) {
+                // 重新配置音频会话和音频引擎
+                setupAudioSession()
+                restartEngine()
+                if isPaused {
+                    play()
+                }
+            }
+        }
+    }
     
     private func setupAudioEngine() {
         audioEngine.attach(playerNode)
@@ -609,27 +640,25 @@ class AudioEnginePlayer {
             return
         }
         
-        // 如果移除的是当前正在播放的歌曲，停止播放
-        if index == currentPlayIndex && isPlaying {
+        // 如果移除的是当前正在播放的歌曲
+        if index == currentPlayIndex {
             stop()
-        }
-        
-        // 移除播放列表中的指定项
-        playlist.remove(at: index)
-        
-        // 调整当前播放索引
-        if index < currentPlayIndex {
-            currentPlayIndex -= 1
-        } else if index == currentPlayIndex && !playlist.isEmpty {
-            currentPlayIndex = 0
-        }
-        
-        // 如果播放列表还有数据，播放第一首
-        if !playlist.isEmpty {
-            playCurrentTrack()
+            // 移除播放列表中的指定项
+            playlist.remove(at: index)
+            
+            // 调整当前播放索引
+            if !playlist.isEmpty {
+                currentPlayIndex = index % playlist.count
+                playCurrentTrack()
+            }
         } else {
-            // 如果播放列表为空，停止播放
-            stop()
+            // 移除播放列表中的指定项
+            playlist.remove(at: index)
+            
+            // 调整当前播放索引
+            if index < currentPlayIndex {
+                currentPlayIndex -= 1
+            }
         }
     }
     
