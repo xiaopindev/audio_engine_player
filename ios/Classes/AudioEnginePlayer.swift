@@ -28,6 +28,7 @@ class AudioEnginePlayer {
     var onPlayingIndexChanged: ((Int) -> ())?
     var onPlayCompleted: (() -> ())?
     var onPlaybackProgressUpdate: ((Int) -> ())?
+    var onSpectrumDataAvailable: (([Float]) -> Void)?
     
     /// 播放总时长，单位毫秒
     var totalDuration: Int = 0
@@ -44,7 +45,14 @@ class AudioEnginePlayer {
     /// 当前播放索引
     var currentPlayIndex: Int = 0
     /// 播放状态
-    var isPlaying: Bool = false
+    var isPlaying: Bool = false {
+        didSet {
+            if !isPlaying {
+                // 如果没有播放，则所有频谱柱显示为 0 值
+                onSpectrumDataAvailable?([Float](repeating: 0.0, count: 24))
+            }
+        }
+    }
     
     //MARK: Private Property
     private var audioSession: AVAudioSession
@@ -55,6 +63,8 @@ class AudioEnginePlayer {
     private var volumeBooster: AVAudioUnitEQ // 新增音量放大器
     private var equalizer: AVAudioUnitEQ
     private var reverb: AVAudioUnitReverb
+    
+    private var spectrumAnalyzer: SpectrumAnalyzer
     
     private var isProcessing: Bool = false
     private var isPaused: Bool = false
@@ -78,12 +88,15 @@ class AudioEnginePlayer {
         equalizer = AVAudioUnitEQ(numberOfBands: 10)
         reverb = AVAudioUnitReverb()
         
+        spectrumAnalyzer = SpectrumAnalyzer(bufferSize: 1024, downsampleFactor: 100)
+        
         initEqualizer()
         setupAudioEngine()
         setupAudioSession()
         setupRemoteTransportControls()
-
-         // 监听音频会话中断通知
+        setupAudioEngineTap()
+        
+        // 监听音频会话中断通知
         NotificationCenter.default.addObserver(self, selector: #selector(handleInterruption), name: AVAudioSession.interruptionNotification, object: nil)
     }
     
@@ -180,6 +193,19 @@ class AudioEnginePlayer {
                 return .success
             }
             return .commandFailed
+        }
+    }
+    
+    private func setupAudioEngineTap() {
+        audioEngine.mainMixerNode.installTap(onBus: 0, bufferSize: AVAudioFrameCount(spectrumAnalyzer.bufferSize), format: audioEngine.mainMixerNode.outputFormat(forBus: 0)) { [weak self] (buffer, time) in
+            guard let self = self else { return }
+            let magnitudes = self.spectrumAnalyzer.analyze(buffer: buffer)
+            DispatchQueue.main.async {
+                if self.isPlaying {
+                    //print("\(magnitudes)\n\n\n")
+                    self.onSpectrumDataAvailable?(magnitudes)
+                }
+            }
         }
     }
     
@@ -287,11 +313,8 @@ class AudioEnginePlayer {
             //print("self.playerNode.current :\(self.playerNode.current) + \(seekPosition/1000) = currentTime: \(currentTime)")
             //print("PlayerNode isPlayer = \(self.playerNode.isPlaying)")
             DispatchQueue.main.async {
-                if self.seekPosition > 0 {
-                    self.playbackProgress = self.seekPosition
-                } else {
-                    self.playbackProgress = progress
-                }
+                self.playbackProgress = progress
+                //print("self.playbackProgress \(self.playbackProgress)")
                 self.onPlaybackProgressUpdate?(self.playbackProgress)
                 if self.playbackProgress >= self.totalDuration {
                     self.stopProgressUpdateTimer()
